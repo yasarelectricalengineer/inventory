@@ -140,12 +140,23 @@
             <p class="hint">Price range and price sorting use each product's lowest supplier price, or the selected supplier's price when a supplier is chosen.</p>
           </div>
 
+          <div class="panel bulk-bar" id="bulkBar" hidden>
+            <strong id="bulkCount"></strong>
+            <label class="field inline">
+              <span class="sr">Category to apply</span>
+              <select id="bulkCategory" aria-label="Category to apply to selected products"></select>
+            </label>
+            <button class="btn primary" type="button" id="bulkSet">Set category</button>
+            <button class="btn danger-outline" type="button" id="bulkRemove">Remove category</button>
+            <button class="btn ghost" type="button" id="bulkClear">Clear selection</button>
+          </div>
+
           <div class="panel table-panel">
             <div class="table-meta"><span id="productCount"></span></div>
             <table class="table" id="productTable">
               <thead>
                 <tr>
-                  <th>Image</th><th>Product</th><th>Category</th>
+                  <th class="chk-col"><input type="checkbox" id="selAll" aria-label="Select all products shown"></th><th>Image</th><th>Product</th><th>Category</th>
                   <th class="num">Lowest Price</th><th>Best Supplier</th><th class="num">Stock</th><th>Status</th><th class="actions-col">Actions</th>
                 </tr>
               </thead>
@@ -196,9 +207,9 @@
               </div>
 
               <div class="field">
-                <span>Category <b class="req">*</b></span>
+                <span>Category <em>(optional)</em></span>
                 <div class="with-btn">
-                  <select id="pCategory" required></select>
+                  <select id="pCategory"></select>
                   <button class="btn" type="button" id="quickCategory" title="Add a new category" aria-label="Add a new category"><svg class="ico"><use href="#i-plus"/></svg></button>
                 </div>
                 <small class="err" id="pCategoryErr"></small>

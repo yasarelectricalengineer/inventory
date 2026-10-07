@@ -16,6 +16,7 @@ A complete product inventory app that runs **entirely in your browser**.
 - **Product details page** (click a product name): *Supplier Price Comparison* table (supplier, code, price, difference from the lowest, status, notes), a *Best supplier* summary and the saving versus the highest price
 - **Add / edit product**: image picker with preview, change and remove; inline validation; quick "+" buttons to add a company or category without leaving the form
 - **Search**: a large search box on the Products tab. It searches product name, category, every supplier (company), supplier product code, supplier notes, any price and stock status instantly. Type several words (for example `smoke company a`) and every word must match
+- **Bulk category edit**: tick products in the Products table (or the top checkbox for everything shown), then use the bar that appears to **Set category** on all of them or **Remove category** from all of them. Both ask for confirmation. Products with no category show "No category" and can be found with the Category filter's "No category" option
 - **Duplicate**: copy a product (opens the form pre-filled as "<name> (Copy)" with its suppliers and image, saved only when you click Save), or duplicate a category or company under a new name
 - **Filters**: category, supplier, stock status, min/max price range, and sorting by lowest price, name or stock
 - **Reports**: biggest supplier price differences (where you can save the most)
