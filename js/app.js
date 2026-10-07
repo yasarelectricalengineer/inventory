@@ -129,6 +129,7 @@
     categories: [],
     companies: [],
     editingId: null,
+    dupSource: null,
     formImage: null,
     formSuppliers: [],
     viewId: null,
@@ -282,8 +283,9 @@
   function route() {
     const { page, id } = parseHash();
     state.viewId = id;
-    if (page !== 'add-product' && state.editingId) {
+    if (page !== 'add-product') {
       state.editingId = null;
+      state.dupSource = null;
     }
     $$('.page').forEach((sec) => { sec.hidden = sec.id !== 'page-' + page; });
     const navPage = page === 'product' ? 'products' : page;
@@ -293,9 +295,11 @@
       if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     if (page === 'add-product') {
-      if (state.editingId) loadForm(state.editingId); else resetForm();
+      if (state.editingId) loadForm(state.editingId);
+      else if (state.dupSource) loadForm(state.dupSource, true);
+      else resetForm();
     }
-    $('#pageTitle').textContent = page === 'add-product' && state.editingId ? 'Edit Product' : PAGES[page];
+    $('#pageTitle').textContent = page === 'add-product' ? (state.editingId ? 'Edit Product' : (state.dupSource ? 'Duplicate Product' : 'Add Product')) : PAGES[page];
     document.title = `${PAGES[page]} – Stockroom`;
     closeMenu();
     window.scrollTo(0, 0);
@@ -426,13 +430,16 @@
 
   function filteredProducts() {
     const q = norm(filters.q);
+    const tokens = q ? q.split(/\s+/) : [];
     const min = filters.min === '' ? null : parseFloat(filters.min);
     const max = filters.max === '' ? null : parseFloat(filters.max);
     const list = state.products.filter((p) => {
       if (q) {
-        const parts = [p.name, catName(p.categoryId)];
-        (p.suppliers || []).forEach((x) => { parts.push(comName(x.companyId), x.code || '', String(x.price), x.price.toFixed(2)); });
-        if (!parts.join('\n').toLowerCase().includes(q)) return false;
+        // Every word typed must match somewhere in the product, its category or any supplier.
+        const parts = [p.name, catName(p.categoryId), STATUS_LABEL[stockStatus(p)]];
+        (p.suppliers || []).forEach((x) => { parts.push(comName(x.companyId), x.code || '', x.notes || '', String(x.price), x.price.toFixed(2)); });
+        const hay = parts.join('\n').toLowerCase();
+        if (!tokens.every((t) => hay.includes(t))) return false;
       }
       if (filters.cat && p.categoryId !== filters.cat) return false;
       if (filters.com && !(p.suppliers || []).some((x) => x.companyId === filters.com)) return false;
@@ -478,6 +485,7 @@
         <td class="td-actions">
           <a class="icon-btn" href="#product/${encodeURIComponent(p.id)}" aria-label="View ${esc(p.name)} and compare prices" title="Compare prices">${icon('chart')}</a>
           <button class="icon-btn" type="button" data-edit="${esc(p.id)}" aria-label="Edit ${esc(p.name)}" title="Edit">${icon('edit')}</button>
+          <button class="icon-btn" type="button" data-dup="${esc(p.id)}" aria-label="Duplicate ${esc(p.name)}" title="Duplicate">${icon('copy')}</button>
           <button class="icon-btn danger" type="button" data-del="${esc(p.id)}" aria-label="Delete ${esc(p.name)}" title="Delete">${icon('trash')}</button>
         </td>
       </tr>`;
@@ -506,7 +514,14 @@
     if (currentPage() === 'product') location.hash = '#products'; else refresh();
   }
 
+  function startDuplicate(id) {
+    state.editingId = null;
+    state.dupSource = id;
+    if (currentPage() === 'add-product') route(); else location.hash = '#add-product';
+  }
+
   function startEdit(id) {
+    state.dupSource = null;
     state.editingId = id;
     if (currentPage() === 'add-product') route(); else location.hash = '#add-product';
   }
@@ -576,6 +591,7 @@
           </div>
           <div class="btn-row">
             <button class="btn primary" type="button" data-detail="edit">${icon('edit')}Edit product</button>
+            <button class="btn" type="button" data-detail="duplicate">${icon('copy')}Duplicate</button>
             <button class="btn danger-outline" type="button" data-detail="delete">${icon('trash')}Delete</button>
             <a class="btn ghost" href="#products">Back to products</a>
           </div>
@@ -702,22 +718,23 @@
     renderImagePreview();
   }
 
-  function loadForm(id) {
+  function loadForm(id, asCopy = false) {
     const p = state.products.find((x) => x.id === id);
-    if (!p) { state.editingId = null; resetForm(); return; }
+    if (!p) { state.editingId = null; state.dupSource = null; resetForm(); return; }
     clearErrors();
-    $('#formTitle').textContent = 'Edit product';
-    $('#saveProduct').textContent = 'Save changes';
+    $('#formTitle').textContent = asCopy ? 'Duplicate product (not saved yet)' : 'Edit product';
+    $('#saveProduct').textContent = asCopy ? 'Save as new product' : 'Save changes';
     $('#saveAnother').hidden = true;
-    F.name().value = p.name;
+    F.name().value = asCopy ? `${p.name} (Copy)` : p.name;
     F.stock().value = p.stock;
     F.min().value = p.minStock;
     fillFormSelects(p.categoryId);
-    state.formSuppliers = (p.suppliers && p.suppliers.length ? p.suppliers : [{}]).map(newSupplier);
+    state.formSuppliers = (p.suppliers && p.suppliers.length ? p.suppliers : [{}]).map((x) => newSupplier(asCopy ? { ...x, id: undefined } : x));
     renderSupplierRows();
     state.formImage = p.image || null;
     $('#pImage').value = '';
     renderImagePreview();
+    if (asCopy) { F.name().focus(); F.name().select(); }
   }
 
   function fileToDataURL(file) {
@@ -801,6 +818,7 @@
     const data = readAndValidateForm();
     if (!data) return;
     const now = Date.now();
+    state.dupSource = null;
     const existing = state.editingId ? state.products.find((p) => p.id === state.editingId) : null;
     const product = existing
       ? { ...existing, ...data, image: state.formImage || null, updatedAt: now }
@@ -854,6 +872,7 @@
         <td class="num" data-label="Products">${int(countUsing(kind, x.id))}</td>
         <td class="td-actions">
           <button class="icon-btn" type="button" data-kind="${kind}" data-edit="${esc(x.id)}" aria-label="Rename ${esc(x.name)}" title="Rename">${icon('edit')}</button>
+          <button class="icon-btn" type="button" data-kind="${kind}" data-dup="${esc(x.id)}" aria-label="Duplicate ${esc(x.name)}" title="Duplicate">${icon('copy')}</button>
           <button class="icon-btn danger" type="button" data-kind="${kind}" data-del="${esc(x.id)}" aria-label="Delete ${esc(x.name)}" title="Delete">${icon('trash')}</button>
         </td>
       </tr>`).join('');
@@ -871,6 +890,21 @@
     state[kind].push(item);
     toast(`${KINDS[kind].Label} added`, 'ok');
     return item;
+  }
+
+  async function duplicateItem(kind, id) {
+    const item = state[kind].find((x) => x.id === id);
+    if (!item) return;
+    const taken = (n) => state[kind].some((x) => norm(x.name) === norm(n));
+    let suggestion = `${item.name} (Copy)`;
+    for (let n = 2; taken(suggestion); n += 1) suggestion = `${item.name} (Copy ${n})`;
+    const name = await askName({ title: `Duplicate ${KINDS[kind].label}`, label: `New ${KINDS[kind].label} name`, value: suggestion, validate: nameValidator(kind) });
+    if (!name) return;
+    const copy = { id: uid(), name, createdAt: Date.now() };
+    try { await Store.put(kind, copy); } catch (e) { storageError(e); return; }
+    state[kind].push(copy);
+    toast(`${KINDS[kind].Label} duplicated`, 'ok');
+    refresh();
   }
 
   async function renameItem(kind, id) {
@@ -973,6 +1007,29 @@
     saveSettings();
     toast('Backup downloaded', 'ok');
     refresh();
+  }
+
+  /* Manual Google Drive backup: no API, no sign-in. We only open the normal Drive website in a new tab. */
+  const DRIVE_URL = 'https://drive.google.com/drive/my-drive';
+  function openDrive() {
+    const w = window.open(DRIVE_URL, '_blank');
+    if (w) { try { w.opener = null; } catch (e) { /* ignore */ } }
+    return !!w;
+  }
+
+  function driveExport() {
+    exportJSON();                       // downloads the backup file
+    const opened = openDrive();         // opens Google Drive in a new tab
+    toast(opened
+      ? 'Backup downloaded. In the Google Drive tab, click New → File upload and choose it.'
+      : 'Backup downloaded. Pop-up was blocked, so open drive.google.com yourself and upload the file.', opened ? 'ok' : '', 8000);
+  }
+
+  function driveImport() {
+    const opened = openDrive();
+    if (!opened) toast('Pop-up was blocked. Open drive.google.com yourself to download your backup.', '', 6000);
+    const dlg = $('#driveDialog');
+    if (!dlg.open) dlg.showModal();
   }
 
   function csvCell(v, isText) {
@@ -1122,11 +1179,12 @@
 
     // Clicking "Add Product" in the nav while editing starts a fresh form
     $('.nav a[data-page="add-product"]').addEventListener('click', () => {
-      if (state.editingId && currentPage() === 'add-product') { state.editingId = null; route(); }
-      else state.editingId = null;
+      const wasSpecial = state.editingId || state.dupSource;
+      state.editingId = null; state.dupSource = null;
+      if (wasSpecial && currentPage() === 'add-product') route();
     });
     $$('a[href="#add-product"]').forEach((a) => {
-      if (!a.closest('.nav')) a.addEventListener('click', () => { state.editingId = null; if (currentPage() === 'add-product') route(); });
+      if (!a.closest('.nav')) a.addEventListener('click', () => { state.editingId = null; state.dupSource = null; if (currentPage() === 'add-product') route(); });
     });
 
     // Global actions (export/import buttons in several places)
@@ -1137,8 +1195,13 @@
       if (a === 'export-json') exportJSON();
       else if (a === 'export-csv') exportCSV();
       else if (a === 'import-json') { $('#importFile').value = ''; $('#importFile').click(); }
+      else if (a === 'drive-export') driveExport();
+      else if (a === 'drive-import') driveImport();
     });
     $('#importFile').addEventListener('change', (e) => importFile(e.target.files[0]));
+    $('#driveChoose').addEventListener('click', () => { $('#driveDialog').close(); $('#importFile').value = ''; $('#importFile').click(); });
+    $('#driveClose').addEventListener('click', () => $('#driveDialog').close());
+    $('#driveReopen').addEventListener('click', openDrive);
     $('#exportCsvProducts').addEventListener('click', exportCSV);
 
     // Search & filters
@@ -1168,7 +1231,9 @@
     $('#productRows').addEventListener('click', (e) => {
       const edit = e.target.closest('[data-edit]');
       const del = e.target.closest('[data-del]');
+      const dup = e.target.closest('[data-dup]');
       if (edit) startEdit(edit.dataset.edit);
+      else if (dup) startDuplicate(dup.dataset.dup);
       else if (del) deleteProduct(del.dataset.del);
     });
 
@@ -1243,6 +1308,7 @@
       const b = e.target.closest('[data-detail]');
       if (!b || !state.viewId) return;
       if (b.dataset.detail === 'edit') startEdit(state.viewId);
+      else if (b.dataset.detail === 'duplicate') startDuplicate(state.viewId);
       else if (b.dataset.detail === 'delete') deleteProduct(state.viewId);
     });
 
@@ -1256,6 +1322,7 @@
         const btn = e.target.closest('[data-kind]');
         if (!btn) return;
         if (btn.dataset.edit) renameItem(btn.dataset.kind, btn.dataset.edit);
+        else if (btn.dataset.dup) duplicateItem(btn.dataset.kind, btn.dataset.dup);
         else if (btn.dataset.del) deleteItem(btn.dataset.kind, btn.dataset.del);
       });
     });

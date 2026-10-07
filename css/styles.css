@@ -324,3 +324,17 @@ dialog p { margin: 0 0 6px; color: var(--muted); }
   .table.compare tr.row-lowest td, .table.compare tbody tr.row-lowest:hover td { background: transparent; }
   .table.compare tbody tr.row-lowest { background: var(--ok-soft); box-shadow: inset 4px 0 0 var(--ok); }
 }
+
+/* Big search + duplicate */
+.search-big { position: relative; display: block; }
+.search-big .ico { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; color: var(--muted); pointer-events: none; }
+.search-big input { width: 100%; min-height: 54px; padding: 12px 16px 12px 50px; font: inherit; font-size: 1.1rem; border: 2px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); }
+.search-big input:focus { border-color: var(--primary); outline: 3px solid var(--primary-soft); }
+
+/* Google Drive manual backup */
+.drive-box { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.drive-box h3 { margin: 0 0 4px; font-size: 1rem; }
+.steps { margin: 0 0 10px; padding-left: 20px; color: var(--text); }
+.steps li { margin: 6px 0; }
+.steps code { background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-size: .85em; }
+#driveDialog .dialog-actions { flex-wrap: wrap; }

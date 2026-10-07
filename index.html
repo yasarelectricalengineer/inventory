@@ -29,6 +29,8 @@
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
       <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M4 3h16"/></symbol>
       <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></symbol>
+      <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 010-8 5 5 0 019.6-1A4.5 4.5 0 0117 18H7z"/></symbol>
       <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18v.5"/></symbol>
     </defs>
   </svg>
@@ -86,11 +88,11 @@
         <!-- Products -->
         <section class="page" id="page-products" hidden>
           <div class="panel filters">
+            <label class="search-big">
+              <svg class="ico"><use href="#i-search"/></svg>
+              <input type="search" id="fSearch" placeholder="Search products, categories, companies, codes or prices…" aria-label="Search products by name, category, company, supplier code or price" autocomplete="off">
+            </label>
             <div class="filter-row">
-              <label class="field grow">
-                <span>Search</span>
-                <input type="search" id="fSearch" placeholder="Name, company, category or price" autocomplete="off">
-              </label>
               <label class="field">
                 <span>Category</span>
                 <select id="fCategory"></select>
@@ -273,6 +275,14 @@
               <button class="btn" type="button" data-action="import-json"><svg class="ico"><use href="#i-upload"/></svg>Import data (JSON)</button>
               <button class="btn" type="button" data-action="export-csv"><svg class="ico"><use href="#i-download"/></svg>Export products (CSV)</button>
             </div>
+            <div class="drive-box">
+              <h3>Google Drive (manual)</h3>
+              <p class="muted">No sign-in or connection. The app downloads the backup and opens the normal Google Drive website, and you upload or download the file yourself.</p>
+              <div class="btn-row">
+                <button class="btn" type="button" data-action="drive-export"><svg class="ico"><use href="#i-cloud"/></svg>Export to Google Drive</button>
+                <button class="btn" type="button" data-action="drive-import"><svg class="ico"><use href="#i-download"/></svg>Import from Google Drive</button>
+              </div>
+            </div>
           </div>
           <div class="panel">
             <div class="panel-head"><h2>Biggest supplier price differences</h2></div>
@@ -298,6 +308,8 @@
               <button class="btn" type="button" data-action="export-json"><svg class="ico"><use href="#i-download"/></svg>Export all data</button>
               <button class="btn" type="button" data-action="import-json"><svg class="ico"><use href="#i-upload"/></svg>Import data</button>
               <button class="btn" type="button" data-action="export-csv"><svg class="ico"><use href="#i-download"/></svg>Export CSV</button>
+              <button class="btn" type="button" data-action="drive-export"><svg class="ico"><use href="#i-cloud"/></svg>Export to Google Drive</button>
+              <button class="btn" type="button" data-action="drive-import"><svg class="ico"><use href="#i-download"/></svg>Import from Google Drive</button>
             </div>
           </div>
           <div class="panel">
@@ -351,6 +363,23 @@
         <button class="btn primary" type="submit" id="confirmOk">OK</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- Import from Google Drive guide -->
+  <dialog id="driveDialog" aria-labelledby="driveDialogTitle">
+    <h2 id="driveDialogTitle">Import from Google Drive</h2>
+    <ol class="steps">
+      <li>Google Drive has opened in a new tab. Find your backup file (<code>inventory-backup-….json</code>).</li>
+      <li>Right-click it and choose <strong>Download</strong>.</li>
+      <li>Come back to this tab and click <strong>Choose downloaded file</strong> below.</li>
+      <li>Check the summary and confirm. All inventory data is restored from the file.</li>
+    </ol>
+    <p class="hint">Importing replaces the data currently in this browser.</p>
+    <div class="dialog-actions">
+      <button class="btn ghost" type="button" id="driveReopen">Open Google Drive again</button>
+      <button class="btn ghost" type="button" id="driveClose">Close</button>
+      <button class="btn primary" type="button" id="driveChoose">Choose downloaded file</button>
+    </div>
   </dialog>
 
   <div class="toasts" id="toasts" role="status" aria-live="polite"></div>

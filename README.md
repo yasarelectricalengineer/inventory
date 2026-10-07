@@ -15,7 +15,8 @@ A complete product inventory app that runs **entirely in your browser**.
 - **Automatic lowest-price highlight**: the cheapest supplier gets a green **LOWEST PRICE** badge, live while you type in the form and everywhere prices are shown
 - **Product details page** (click a product name): *Supplier Price Comparison* table (supplier, code, price, difference from the lowest, status, notes), a *Best supplier* summary and the saving versus the highest price
 - **Add / edit product**: image picker with preview, change and remove; inline validation; quick "+" buttons to add a company or category without leaving the form
-- **Search**: instant search by product name, any supplier name, supplier product code, category or any supplier price
+- **Search**: a large search box on the Products tab. It searches product name, category, every supplier (company), supplier product code, supplier notes, any price and stock status instantly. Type several words (for example `smoke company a`) and every word must match
+- **Duplicate**: copy a product (opens the form pre-filled as "<name> (Copy)" with its suppliers and image, saved only when you click Save), or duplicate a category or company under a new name
 - **Filters**: category, supplier, stock status, min/max price range, and sorting by lowest price, name or stock
 - **Reports**: biggest supplier price differences (where you can save the most)
 - **Categories and companies**: add, rename, delete, search. A category or company that is still used by a product cannot be deleted
@@ -71,6 +72,9 @@ Open **Reports / Export & Import** or **Settings**.
 
 - **Export data (JSON)**: downloads `inventory-backup-YYYY-MM-DD.json` with all products (including supplier prices and images), categories and companies.
 - **Import data (JSON)**: pick a file you exported earlier. You'll see a confirmation showing what it contains. Importing **replaces** all current data.
+- **Export to Google Drive** (manual): downloads the same JSON backup, then opens <https://drive.google.com/drive/my-drive> in a new tab. In Drive, click **New → File upload** and pick the downloaded file.
+- **Import from Google Drive** (manual): opens Drive in a new tab. Download your backup there, return to the app and click **Choose downloaded file**, then confirm the import.
+  These buttons only open the normal Google Drive website. There is no Google API, OAuth, Cloud project or billing, and the app never sends your data anywhere. You upload the file yourself, so it is covered by your own Google account's privacy settings.
 - **Export products (CSV)**: downloads a spreadsheet-friendly list (name, category, lowest price, best supplier, highest price, number of suppliers, all suppliers with prices and codes, stock, minimum level, status, stock value). It does not include images and is not meant for re-import; use JSON for backups.
 - **Clear all data** (Settings): asks for confirmation, then deletes everything from this browser.
 
