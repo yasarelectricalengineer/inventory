@@ -18,10 +18,8 @@
 
   /* ---------- Settings (small, kept in localStorage) ---------- */
   const SETTINGS_KEY = 'stockroom:settings';
-  const DEFAULT_BRAND = 'Ameer Fire & Safety';
-  const LOGO_RE = /^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/;
   const settings = (() => {
-    const defaults = { currency: 'AED', seeded: false, lastBackup: null, brandName: DEFAULT_BRAND, brandLogo: null };
+    const defaults = { currency: 'AED', seeded: false, lastBackup: null };
     try {
       return { ...defaults, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
     } catch (e) {
@@ -29,9 +27,8 @@
     }
   })();
   function saveSettings() {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); return true; } catch (e) { return false; }
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* ignore */ }
   }
-  if (settings.brandLogo && !LOGO_RE.test(settings.brandLogo)) settings.brandLogo = null;
 
   /* ---------- Storage layer: IndexedDB with localStorage fallback ---------- */
   const STORES = ['products', 'categories', 'companies'];
@@ -96,15 +93,6 @@
       await this._tx(store, 'readwrite', (tx) => { tx.objectStore(store).put(obj); });
     },
 
-    async putMany(store, arr) {
-      if (this.mode === 'localStorage') {
-        const map = new Map(arr.map((x) => [x.id, x]));
-        this._lsWrite(store, this._lsRead(store).map((x) => map.get(x.id) || x));
-        return;
-      }
-      await this._tx(store, 'readwrite', (tx) => { const os = tx.objectStore(store); arr.forEach((x) => os.put(x)); });
-    },
-
     async remove(store, id) {
       if (this.mode === 'localStorage') {
         this._lsWrite(store, this._lsRead(store).filter((x) => x.id !== id));
@@ -142,8 +130,6 @@
     companies: [],
     editingId: null,
     dupSource: null,
-    selected: new Set(),
-    visibleIds: [],
     formImage: null,
     formSuppliers: [],
     viewId: null,
@@ -282,58 +268,6 @@
       : 'Could not save to browser storage. Is private browsing on?', 'error', 6000);
   }
 
-  /* ---------- Branding (name + logo, editable in Settings) ---------- */
-  const brandName = () => (settings.brandName || '').trim() || DEFAULT_BRAND;
-  const defaultFavicon = ($('#favicon') || {}).href || '';
-  function setDocTitle(page) { document.title = `${PAGES[page] || PAGES.dashboard} – ${brandName()}`; }
-
-  function applyBrand() {
-    $('#brandName').textContent = brandName();
-    const img = $('#brandImg');
-    if (settings.brandLogo) img.src = settings.brandLogo; else img.removeAttribute('src');
-    img.toggleAttribute('hidden', !settings.brandLogo);
-    $('#brandSvg').toggleAttribute('hidden', !!settings.brandLogo);
-    const fav = $('#favicon');
-    if (fav) fav.href = settings.brandLogo || defaultFavicon;
-    setDocTitle(currentPage());
-  }
-
-  function renderBrandSettings() {
-    $('#brandInput').value = settings.brandName;
-    $('#brandErr').textContent = '';
-    $('#brandPreview').innerHTML = settings.brandLogo
-      ? `<img src="${esc(settings.brandLogo)}" alt="Current logo">`
-      : icon('box');
-    $('#brandLogoRemove').hidden = !settings.brandLogo;
-    $('#brandPickLabel').textContent = settings.brandLogo ? 'Change logo' : 'Upload logo';
-  }
-
-  /** Shrink an uploaded logo to at most 96px (4x the 24px display size) and keep transparency (PNG). */
-  function fileToLogo(file) {
-    return new Promise((resolve, reject) => {
-      if (!/^image\//.test(file.type)) { reject(new Error('Please choose an image file.')); return; }
-      if (file.size > 10 * 1024 * 1024) { reject(new Error('That image is over 10 MB. Please choose a smaller one.')); return; }
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error('Could not read that file.'));
-      reader.onload = () => {
-        const img = new Image();
-        img.onerror = () => reject(new Error('That file is not a valid image.'));
-        img.onload = () => {
-          const MAX = 96;
-          const iw = img.naturalWidth || MAX; const ih = img.naturalHeight || MAX;
-          const scale = Math.min(1, MAX / Math.max(iw, ih));
-          const w = Math.max(1, Math.round(iw * scale)); const h = Math.max(1, Math.round(ih * scale));
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/png'));
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
   /* ---------- Routing ---------- */
   function parseHash() {
     const h = (location.hash || '#dashboard').slice(1);
@@ -366,7 +300,7 @@
       else resetForm();
     }
     $('#pageTitle').textContent = page === 'add-product' ? (state.editingId ? 'Edit Product' : (state.dupSource ? 'Duplicate Product' : 'Add Product')) : PAGES[page];
-    setDocTitle(page);
+    document.title = `${PAGES[page]} – Stockroom`;
     closeMenu();
     window.scrollTo(0, 0);
     renderPage(page);
@@ -471,10 +405,7 @@
   }
 
   function renderFilters() {
-    const keepCat = filters.cat;
     fillSelect($('#fCategory'), state.categories, 'All categories', filters.cat);
-    $('#fCategory').insertAdjacentHTML('beforeend', '<option value="__none">No category</option>');
-    if (keepCat === '__none') $('#fCategory').value = '__none';
     fillSelect($('#fCompany'), state.companies, 'All suppliers', filters.com);
     filters.cat = $('#fCategory').value;
     filters.com = $('#fCompany').value;
@@ -510,8 +441,7 @@
         const hay = parts.join('\n').toLowerCase();
         if (!tokens.every((t) => hay.includes(t))) return false;
       }
-      if (filters.cat === '__none') { if (catById(p.categoryId)) return false; }
-      else if (filters.cat && p.categoryId !== filters.cat) return false;
+      if (filters.cat && p.categoryId !== filters.cat) return false;
       if (filters.com && !(p.suppliers || []).some((x) => x.companyId === filters.com)) return false;
       if (filters.status && stockStatus(p) !== filters.status) return false;
       const ep = effPrice(p);
@@ -539,17 +469,12 @@
   function renderProducts() {
     const list = filteredProducts();
     const total = state.products.length;
-    state.visibleIds = list.map((p) => p.id);
-    // Only products currently shown can stay selected, so bulk actions never touch hidden rows.
-    const shown = new Set(state.visibleIds);
-    state.selected.forEach((id) => { if (!shown.has(id)) state.selected.delete(id); });
     $('#productCount').textContent = `Showing ${list.length} of ${total} product${total === 1 ? '' : 's'}`;
     $('#productRows').innerHTML = list.map((p) => {
       const info = priceInfo(p);
       const others = info && info.count > 1 ? `<div class="sub">${info.count} suppliers</div>` : (info ? '<div class="sub">1 supplier</div>' : '<div class="sub">No supplier</div>');
       return `
-      <tr class="${state.selected.has(p.id) ? 'selected' : ''}">
-        <td class="td-chk"><input type="checkbox" data-sel="${esc(p.id)}" aria-label="Select ${esc(p.name)}"${state.selected.has(p.id) ? ' checked' : ''}></td>
+      <tr>
         <td class="td-img" data-label="Image">${thumb(p)}</td>
         <td data-label="Product"><a class="pname plink" href="#product/${encodeURIComponent(p.id)}">${esc(p.name)}</a></td>
         <td data-label="Category">${esc(catName(p.categoryId))}</td>
@@ -566,7 +491,6 @@
       </tr>`;
     }).join('');
 
-    updateSelectionUI();
     const empty = $('#productsEmpty');
     $('#productTable').hidden = list.length === 0;
     empty.hidden = list.length !== 0;
@@ -575,56 +499,6 @@
       $('#productsEmptyText').textContent = none ? 'No products yet. Add your first product to get started.' : 'No products match your search or filters.';
       $('#productsEmptyCta').hidden = !none;
     }
-  }
-
-  /* ---------- Bulk category edit ---------- */
-  function updateSelectionUI() {
-    const n = state.selected.size;
-    const all = $('#selAll');
-    all.checked = n > 0 && n === state.visibleIds.length;
-    all.indeterminate = n > 0 && n < state.visibleIds.length;
-    const bar = $('#bulkBar');
-    bar.hidden = n === 0;
-    if (n) {
-      $('#bulkCount').textContent = `${n} product${n === 1 ? '' : 's'} selected`;
-      fillSelect($('#bulkCategory'), state.categories, 'Choose category…', $('#bulkCategory').value);
-    }
-    $$('#productRows tr').forEach((tr) => {
-      const cb = $('[data-sel]', tr);
-      if (cb) tr.classList.toggle('selected', cb.checked);
-    });
-  }
-
-  async function bulkApplyCategory(categoryId) {
-    const changed = state.products
-      .filter((p) => state.selected.has(p.id) && (p.categoryId || '') !== categoryId)
-      .map((p) => ({ ...p, categoryId, updatedAt: Date.now() }));
-    if (!changed.length) {
-      toast(categoryId ? 'Those products already have that category.' : 'Those products already have no category.');
-      return;
-    }
-    try { await Store.putMany('products', changed); } catch (e) { storageError(e); return; }
-    const map = new Map(changed.map((p) => [p.id, p]));
-    state.products = state.products.map((p) => map.get(p.id) || p);
-    state.selected.clear();
-    toast(categoryId
-      ? `Category "${catName(categoryId)}" set on ${changed.length} product${changed.length === 1 ? '' : 's'}`
-      : `Category removed from ${changed.length} product${changed.length === 1 ? '' : 's'}`, 'ok');
-    refresh();
-  }
-
-  async function bulkSetCategory() {
-    const id = $('#bulkCategory').value;
-    if (!id) { toast('Choose a category first.', 'error'); $('#bulkCategory').focus(); return; }
-    const n = state.selected.size;
-    const ok = await confirmBox({ title: 'Set category?', message: `Set the category "${catName(id)}" on ${n} selected product${n === 1 ? '' : 's'}? Their current category will be replaced.`, okText: 'Set category' });
-    if (ok) bulkApplyCategory(id);
-  }
-
-  async function bulkRemoveCategory() {
-    const n = state.selected.size;
-    const ok = await confirmBox({ title: 'Remove category?', message: `Remove the category from ${n} selected product${n === 1 ? '' : 's'}? They will show as "No category". The products themselves are not deleted.`, okText: 'Remove category', danger: true });
-    if (ok) bulkApplyCategory('');
   }
 
   async function deleteProduct(id) {
@@ -827,7 +701,7 @@
   }
 
   function fillFormSelects(categoryId) {
-    fillSelect(F.category(), state.categories, 'No category', categoryId);
+    fillSelect(F.category(), state.categories, state.categories.length ? 'Select category…' : 'No categories yet – add one', categoryId);
   }
 
   function resetForm() {
@@ -908,6 +782,7 @@
     const minStock = Number(minRaw);
 
     if (!name) { setErr('name', 'pNameErr', 'Enter a product name.'); ok = false; }
+    if (!categoryId) { setErr('category', 'pCategoryErr', 'Choose a category.'); ok = false; }
     if (stockRaw === '' || !Number.isInteger(stock) || stock < 0) { setErr('stock', 'pStockErr', 'Enter a whole number, 0 or more.'); ok = false; }
     if (minRaw === '' || !Number.isInteger(minStock) || minStock < 0) { setErr('min', 'pMinErr', 'Enter a whole number, 0 or more.'); ok = false; }
 
@@ -1084,7 +959,6 @@
 
   async function renderSettings() {
     $('#currencyInput').value = settings.currency;
-    renderBrandSettings();
     const info = [['Storage engine', Store.mode === 'indexeddb' ? 'IndexedDB (this browser)' : 'localStorage fallback (IndexedDB unavailable)']];
     info.push(['Records', `${state.products.length} products, ${state.categories.length} categories, ${state.companies.length} companies`]);
     info.push(['Last backup export', settings.lastBackup ? new Date(settings.lastBackup).toLocaleString() : 'Never']);
@@ -1123,7 +997,7 @@
       app: 'stockroom-inventory',
       version: 2,
       exportedAt: new Date().toISOString(),
-      settings: { currency: settings.currency, brandName: settings.brandName, brandLogo: settings.brandLogo },
+      settings: { currency: settings.currency },
       categories: state.categories,
       companies: state.companies,
       products: state.products,
@@ -1252,13 +1126,7 @@
         updatedAt: num(p.updatedAt) || Date.now(),
       });
     });
-    const rs = raw.settings && typeof raw.settings === 'object' ? raw.settings : {};
-    return {
-      categories, companies, products, skipped,
-      currency: typeof rs.currency === 'string' ? rs.currency.slice(0, 6) : null,
-      brandName: typeof rs.brandName === 'string' && rs.brandName.trim() ? rs.brandName.trim().slice(0, 40) : null,
-      brandLogo: typeof rs.brandLogo === 'string' && LOGO_RE.test(rs.brandLogo) ? rs.brandLogo : null,
-    };
+    return { categories, companies, products, skipped, currency: raw.settings && typeof raw.settings.currency === 'string' ? raw.settings.currency.slice(0, 6) : null };
   }
 
   async function importFile(file) {
@@ -1279,9 +1147,6 @@
     state.categories = parsed.categories;
     state.companies = parsed.companies;
     if (parsed.currency !== null) settings.currency = parsed.currency;
-    if (parsed.brandName !== null) settings.brandName = parsed.brandName;
-    if (parsed.brandLogo !== null) settings.brandLogo = parsed.brandLogo;
-    applyBrand();
     settings.seeded = true;
     saveSettings();
     Object.assign(filters, { q: '', cat: '', com: '', status: '', min: '', max: '' });
@@ -1371,26 +1236,6 @@
       if (edit) startEdit(edit.dataset.edit);
       else if (dup) startDuplicate(dup.dataset.dup);
       else if (del) deleteProduct(del.dataset.del);
-    });
-
-    // Bulk selection
-    $('#productRows').addEventListener('change', (e) => {
-      const cb = e.target.closest('[data-sel]');
-      if (!cb) return;
-      if (cb.checked) state.selected.add(cb.dataset.sel); else state.selected.delete(cb.dataset.sel);
-      updateSelectionUI();
-    });
-    $('#selAll').addEventListener('change', (e) => {
-      if (e.target.checked) state.visibleIds.forEach((id) => state.selected.add(id)); else state.selected.clear();
-      $$('#productRows [data-sel]').forEach((cb) => { cb.checked = e.target.checked; });
-      updateSelectionUI();
-    });
-    $('#bulkSet').addEventListener('click', bulkSetCategory);
-    $('#bulkRemove').addEventListener('click', bulkRemoveCategory);
-    $('#bulkClear').addEventListener('click', () => {
-      state.selected.clear();
-      $$('#productRows [data-sel]').forEach((cb) => { cb.checked = false; });
-      updateSelectionUI();
     });
 
     // Product form
@@ -1488,38 +1333,6 @@
       settings.currency = e.target.value.trim().slice(0, 6);
       saveSettings();
     });
-    $('#brandInput').addEventListener('input', (e) => {
-      settings.brandName = e.target.value.slice(0, 40);
-      saveSettings();
-      applyBrand();
-    });
-    $('#brandInput').addEventListener('blur', (e) => {
-      if (!e.target.value.trim()) { settings.brandName = DEFAULT_BRAND; e.target.value = DEFAULT_BRAND; saveSettings(); applyBrand(); }
-    });
-    $('#brandPick').addEventListener('click', () => $('#brandFile').click());
-    $('#brandFile').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      $('#brandErr').textContent = '';
-      if (!file) return;
-      const previous = settings.brandLogo;
-      try {
-        settings.brandLogo = await fileToLogo(file);
-        if (!saveSettings()) { settings.brandLogo = previous; throw new Error('Could not save the logo. Browser storage may be full.'); }
-        applyBrand(); renderBrandSettings();
-        toast('Logo updated', 'ok');
-      } catch (err) {
-        $('#brandErr').textContent = err.message;
-      }
-      e.target.value = '';
-    });
-    $('#brandLogoRemove').addEventListener('click', () => {
-      settings.brandLogo = null; saveSettings(); applyBrand(); renderBrandSettings();
-      toast('Logo removed. Default icon restored.');
-    });
-    $('#brandReset').addEventListener('click', () => {
-      settings.brandName = DEFAULT_BRAND; settings.brandLogo = null; saveSettings(); applyBrand(); renderBrandSettings();
-      toast('Name and logo reset to default', 'ok');
-    });
     $('#clearAll').addEventListener('click', clearAll);
   }
 
@@ -1555,7 +1368,6 @@
 
   async function init() {
     bind();
-    applyBrand();
     await Store.init();
     try {
       [state.products, state.categories, state.companies] = await Promise.all(STORES.map((s) => Store.getAll(s)));
@@ -1571,7 +1383,6 @@
       suppliers: p.suppliers.map((x) => ({ ...x, price: num(Number(x.price)) })),
     }));
     await seedIfFirstRun();
-    applyBrand();
     if (Store.mode === 'localStorage') {
       toast('IndexedDB is unavailable, so data is saved in localStorage (smaller limit). Back up often.', '', 7000);
     }
