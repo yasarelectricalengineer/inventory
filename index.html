@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Frontend-only product inventory manager. All data stays in your browser.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; connect-src 'none'; form-action 'none'">
+  <title>Stockroom – Product Inventory</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f6fed' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8l-9-5-9 5v8l9 5 9-5V8z'/%3E%3Cpath d='M3 8l9 5 9-5M12 13v8'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <noscript><p class="noscript">This app needs JavaScript enabled. All data stays in your browser.</p></noscript>
+
+  <!-- Icon sprite -->
+  <svg class="sprite" width="0" height="0" aria-hidden="true">
+    <defs>
+      <symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
+      <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20 12l-8 8-9-9V3h8l9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+      <symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+      <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M4 3h16"/></symbol>
+      <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18v.5"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app" id="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#dashboard">
+        <svg class="ico brand-ico"><use href="#i-box"/></svg>
+        <span>Stockroom</span>
+      </a>
+      <nav class="nav">
+        <a href="#dashboard" data-page="dashboard"><svg class="ico"><use href="#i-dash"/></svg>Dashboard</a>
+        <a href="#products" data-page="products"><svg class="ico"><use href="#i-box"/></svg>Products</a>
+        <a href="#add-product" data-page="add-product"><svg class="ico"><use href="#i-plus"/></svg>Add Product</a>
+        <a href="#categories" data-page="categories"><svg class="ico"><use href="#i-tag"/></svg>Categories</a>
+        <a href="#companies" data-page="companies"><svg class="ico"><use href="#i-building"/></svg>Companies</a>
+        <a href="#reports" data-page="reports"><svg class="ico"><use href="#i-chart"/></svg>Reports / Export &amp; Import</a>
+        <a href="#settings" data-page="settings"><svg class="ico"><use href="#i-gear"/></svg>Settings</a>
+      </nav>
+      <p class="sidebar-note">Data is stored only in this browser. Export a backup regularly.</p>
+    </aside>
+    <div class="scrim" id="scrim" hidden></div>
+
+    <div class="main">
+      <!-- Top navigation -->
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false"><svg class="ico"><use href="#i-menu"/></svg></button>
+        <h1 id="pageTitle">Dashboard</h1>
+        <label class="topsearch">
+          <svg class="ico"><use href="#i-search"/></svg>
+          <input type="search" id="globalSearch" placeholder="Search products…" aria-label="Search products" autocomplete="off">
+        </label>
+        <a class="btn primary topadd" href="#add-product"><svg class="ico"><use href="#i-plus"/></svg><span>Add product</span></a>
+      </header>
+
+      <main class="content" id="content">
+
+        <!-- Dashboard -->
+        <section class="page" id="page-dashboard" hidden>
+          <div class="banner" id="backupBanner" hidden></div>
+          <div class="cards" id="statCards"></div>
+          <div class="grid-2">
+            <div class="panel">
+              <div class="panel-head"><h2>Needs attention</h2><a href="#products" class="link" id="seeAllLow">View products</a></div>
+              <div id="attentionList"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Inventory value by category</h2></div>
+              <div id="valueByCategory"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Products -->
+        <section class="page" id="page-products" hidden>
+          <div class="panel filters">
+            <div class="filter-row">
+              <label class="field grow">
+                <span>Search</span>
+                <input type="search" id="fSearch" placeholder="Name, company, category or price" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Category</span>
+                <select id="fCategory"></select>
+              </label>
+              <label class="field">
+                <span>Supplier</span>
+                <select id="fCompany"></select>
+              </label>
+              <label class="field">
+                <span>Stock status</span>
+                <select id="fStatus">
+                  <option value="">All statuses</option>
+                  <option value="in">In Stock</option>
+                  <option value="low">Low Stock</option>
+                  <option value="out">Out of Stock</option>
+                </select>
+              </label>
+            </div>
+            <div class="filter-row">
+              <label class="field">
+                <span>Min price (range)</span>
+                <input type="number" id="fMin" min="0" step="0.01" inputmode="decimal" placeholder="0">
+              </label>
+              <label class="field">
+                <span>Max price (range)</span>
+                <input type="number" id="fMax" min="0" step="0.01" inputmode="decimal" placeholder="Any">
+              </label>
+              <label class="field">
+                <span>Sort by</span>
+                <select id="fSort">
+                  <option value="name-asc">Name (A–Z)</option>
+                  <option value="name-desc">Name (Z–A)</option>
+                  <option value="price-asc">Lowest price (low to high)</option>
+                  <option value="price-desc">Lowest price (high to low)</option>
+                  <option value="stock-asc">Stock (low to high)</option>
+                  <option value="stock-desc">Stock (high to low)</option>
+                  <option value="newest">Newest first</option>
+                </select>
+              </label>
+              <div class="filter-actions">
+                <button class="btn" id="fClear" type="button">Clear filters</button>
+                <button class="btn" id="exportCsvProducts" type="button"><svg class="ico"><use href="#i-download"/></svg>CSV</button>
+              </div>
+            </div>
+            <p class="hint">Price range and price sorting use each product's lowest supplier price, or the selected supplier's price when a supplier is chosen.</p>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="table-meta"><span id="productCount"></span></div>
+            <table class="table" id="productTable">
+              <thead>
+                <tr>
+                  <th>Image</th><th>Product</th><th>Category</th>
+                  <th class="num">Lowest Price</th><th>Best Supplier</th><th class="num">Stock</th><th>Status</th><th class="actions-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="productRows"></tbody>
+            </table>
+            <div class="empty" id="productsEmpty" hidden>
+              <svg class="ico big"><use href="#i-box"/></svg>
+              <p id="productsEmptyText"></p>
+              <a class="btn primary" href="#add-product" id="productsEmptyCta">Add your first product</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Add / Edit product -->
+        <section class="page" id="page-add-product" hidden>
+          <form class="panel form" id="productForm" novalidate>
+            <h2 id="formTitle">Add product</h2>
+            <div class="form-grid">
+              <label class="field span-2">
+                <span>Product name <b class="req">*</b></span>
+                <input type="text" id="pName" maxlength="120" required autocomplete="off">
+                <small class="err" id="pNameErr"></small>
+              </label>
+
+              <div class="field span-2">
+                <span>Product image</span>
+                <div class="image-box">
+                  <div class="image-preview" id="imgPreview"><svg class="ico big"><use href="#i-image"/></svg></div>
+                  <div class="image-actions">
+                    <input type="file" id="pImage" accept="image/*" hidden>
+                    <button class="btn" type="button" id="pickImage"><svg class="ico"><use href="#i-upload"/></svg><span id="pickImageLabel">Choose image</span></button>
+                    <button class="btn danger-outline" type="button" id="removeImage" hidden>Remove image</button>
+                    <small class="hint">Stays on your device. Large images are shrunk to save space.</small>
+                    <small class="err" id="pImageErr"></small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field span-2 suppliers">
+                <div class="sup-head">
+                  <span>Suppliers &amp; purchase prices <b class="req">*</b></span>
+                  <button class="btn" type="button" id="addSupplier"><svg class="ico"><use href="#i-plus"/></svg>Add supplier</button>
+                </div>
+                <small class="hint">Add every company that sells this product. The lowest price is highlighted automatically.</small>
+                <div id="supplierRows"></div>
+                <div class="supplier-summary" id="supplierSummary" hidden></div>
+                <small class="err" id="suppliersErr"></small>
+              </div>
+
+              <div class="field">
+                <span>Category <b class="req">*</b></span>
+                <div class="with-btn">
+                  <select id="pCategory" required></select>
+                  <button class="btn" type="button" id="quickCategory" title="Add a new category" aria-label="Add a new category"><svg class="ico"><use href="#i-plus"/></svg></button>
+                </div>
+                <small class="err" id="pCategoryErr"></small>
+              </div>
+
+              <label class="field">
+                <span>Stock quantity <b class="req">*</b></span>
+                <input type="number" id="pStock" min="0" step="1" inputmode="numeric" required>
+                <small class="err" id="pStockErr"></small>
+              </label>
+              <label class="field">
+                <span>Minimum stock level <b class="req">*</b></span>
+                <input type="number" id="pMin" min="0" step="1" inputmode="numeric" required>
+                <small class="hint">Low Stock shows when stock is above 0 and at or below this number.</small>
+                <small class="err" id="pMinErr"></small>
+              </label>
+            </div>
+            <div class="form-actions">
+              <button class="btn primary" type="submit" id="saveProduct">Save product</button>
+              <button class="btn" type="button" id="saveAnother">Save &amp; add another</button>
+              <a class="btn ghost" href="#products" id="cancelForm">Cancel</a>
+            </div>
+          </form>
+        </section>
+
+        <!-- Product details -->
+        <section class="page" id="page-product" hidden>
+          <div id="productDetail"></div>
+        </section>
+
+        <!-- Categories -->
+        <section class="page" id="page-categories" hidden>
+          <div class="panel">
+            <div class="panel-head wrap">
+              <label class="field grow inline">
+                <span class="sr">Search categories</span>
+                <input type="search" id="catSearch" placeholder="Search categories" autocomplete="off">
+              </label>
+              <button class="btn primary" id="addCategory" type="button"><svg class="ico"><use href="#i-plus"/></svg>Add category</button>
+            </div>
+            <table class="table simple" id="catTable">
+              <thead><tr><th>Category</th><th class="num">Products</th><th class="actions-col">Actions</th></tr></thead>
+              <tbody id="catRows"></tbody>
+            </table>
+            <div class="empty" id="catEmpty" hidden><p></p></div>
+          </div>
+        </section>
+
+        <!-- Companies -->
+        <section class="page" id="page-companies" hidden>
+          <div class="panel">
+            <div class="panel-head wrap">
+              <label class="field grow inline">
+                <span class="sr">Search companies</span>
+                <input type="search" id="comSearch" placeholder="Search companies" autocomplete="off">
+              </label>
+              <button class="btn primary" id="addCompany" type="button"><svg class="ico"><use href="#i-plus"/></svg>Add company</button>
+            </div>
+            <table class="table simple" id="comTable">
+              <thead><tr><th>Company</th><th class="num">Products</th><th class="actions-col">Actions</th></tr></thead>
+              <tbody id="comRows"></tbody>
+            </table>
+            <div class="empty" id="comEmpty" hidden><p></p></div>
+          </div>
+        </section>
+
+        <!-- Reports -->
+        <section class="page" id="page-reports" hidden>
+          <div class="panel">
+            <div class="panel-head"><h2>Backup &amp; export</h2></div>
+            <p class="muted">Your data lives only in this browser. Download a JSON backup regularly and keep it somewhere safe. Use it to restore on this or another device.</p>
+            <div class="btn-row">
+              <button class="btn primary" type="button" data-action="export-json"><svg class="ico"><use href="#i-download"/></svg>Export data (JSON)</button>
+              <button class="btn" type="button" data-action="import-json"><svg class="ico"><use href="#i-upload"/></svg>Import data (JSON)</button>
+              <button class="btn" type="button" data-action="export-csv"><svg class="ico"><use href="#i-download"/></svg>Export products (CSV)</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Biggest supplier price differences</h2></div>
+            <div id="reportSavings"></div>
+          </div>
+          <div class="grid-2">
+            <div class="panel">
+              <div class="panel-head"><h2>Low &amp; out of stock</h2></div>
+              <div id="reportLow"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Summary by category</h2></div>
+              <div id="reportCategory"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Settings -->
+        <section class="page" id="page-settings" hidden>
+          <div class="panel">
+            <div class="panel-head"><h2>Data</h2></div>
+            <div class="btn-row">
+              <button class="btn" type="button" data-action="export-json"><svg class="ico"><use href="#i-download"/></svg>Export all data</button>
+              <button class="btn" type="button" data-action="import-json"><svg class="ico"><use href="#i-upload"/></svg>Import data</button>
+              <button class="btn" type="button" data-action="export-csv"><svg class="ico"><use href="#i-download"/></svg>Export CSV</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Display</h2></div>
+            <label class="field narrow">
+              <span>Currency symbol</span>
+              <input type="text" id="currencyInput" maxlength="6" placeholder="$">
+              <small class="hint">Shown next to prices. It does not convert amounts.</small>
+            </label>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Storage</h2></div>
+            <dl class="kv" id="storageInfo"></dl>
+          </div>
+          <div class="panel danger-zone">
+            <div class="panel-head"><h2>Danger zone</h2></div>
+            <p class="muted">Permanently deletes every product, category, company and image from this browser. Export a backup first.</p>
+            <button class="btn danger" type="button" id="clearAll"><svg class="ico"><use href="#i-trash"/></svg>Clear all data</button>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <input type="file" id="importFile" accept="application/json,.json" hidden>
+
+  <!-- Name dialog (add/rename category or company) -->
+  <dialog id="nameDialog" aria-labelledby="nameDialogTitle">
+    <form id="nameForm" method="dialog" novalidate>
+      <h2 id="nameDialogTitle"></h2>
+      <label class="field">
+        <span id="nameLabel">Name</span>
+        <input type="text" id="nameInput" maxlength="60" autocomplete="off">
+        <small class="err" id="nameError"></small>
+      </label>
+      <div class="dialog-actions">
+        <button class="btn ghost" type="button" id="nameCancel">Cancel</button>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Confirm dialog -->
+  <dialog id="confirmDialog" aria-labelledby="confirmTitle">
+    <form id="confirmForm" method="dialog">
+      <h2 id="confirmTitle"></h2>
+      <p id="confirmMessage"></p>
+      <div class="dialog-actions">
+        <button class="btn ghost" type="button" id="confirmCancel">Cancel</button>
+        <button class="btn primary" type="submit" id="confirmOk">OK</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
