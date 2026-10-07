@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Frontend-only product inventory manager. All data stays in your browser.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; connect-src 'none'; form-action 'none'">
-  <title>Stockroom – Product Inventory</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f6fed' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8l-9-5-9 5v8l9 5 9-5V8z'/%3E%3Cpath d='M3 8l9 5 9-5M12 13v8'/%3E%3C/svg%3E">
+  <title>Ameer Fire &amp; Safety – Product Inventory</title>
+  <link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffb800' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='24' height='24' rx='5' fill='%23000' stroke='none'/%3E%3Cpath d='M21 8l-9-5-9 5v8l9 5 9-5V8z' transform='translate(3 3) scale(.75)'/%3E%3Cpath d='M3 8l9 5 9-5M12 13v8' transform='translate(3 3) scale(.75)'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -39,8 +39,9 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar" aria-label="Main navigation">
       <a class="brand" href="#dashboard">
-        <svg class="ico brand-ico"><use href="#i-box"/></svg>
-        <span>Stockroom</span>
+        <svg class="ico brand-ico" id="brandSvg"><use href="#i-box"/></svg>
+        <img class="brand-ico" id="brandImg" alt="" hidden>
+        <span id="brandName">Ameer Fire &amp; Safety</span>
       </a>
       <nav class="nav">
         <a href="#dashboard" data-page="dashboard"><svg class="ico"><use href="#i-dash"/></svg>Dashboard</a>
@@ -140,12 +141,23 @@
             <p class="hint">Price range and price sorting use each product's lowest supplier price, or the selected supplier's price when a supplier is chosen.</p>
           </div>
 
+          <div class="panel bulk-bar" id="bulkBar" hidden>
+            <strong id="bulkCount"></strong>
+            <label class="field inline">
+              <span class="sr">Category to apply</span>
+              <select id="bulkCategory" aria-label="Category to apply to selected products"></select>
+            </label>
+            <button class="btn primary" type="button" id="bulkSet">Set category</button>
+            <button class="btn danger-outline" type="button" id="bulkRemove">Remove category</button>
+            <button class="btn ghost" type="button" id="bulkClear">Clear selection</button>
+          </div>
+
           <div class="panel table-panel">
             <div class="table-meta"><span id="productCount"></span></div>
             <table class="table" id="productTable">
               <thead>
                 <tr>
-                  <th>Image</th><th>Product</th><th>Category</th>
+                  <th class="chk-col"><input type="checkbox" id="selAll" aria-label="Select all products shown"></th><th>Image</th><th>Product</th><th>Category</th>
                   <th class="num">Lowest Price</th><th>Best Supplier</th><th class="num">Stock</th><th>Status</th><th class="actions-col">Actions</th>
                 </tr>
               </thead>
@@ -196,9 +208,9 @@
               </div>
 
               <div class="field">
-                <span>Category <b class="req">*</b></span>
+                <span>Category <em>(optional)</em></span>
                 <div class="with-btn">
-                  <select id="pCategory" required></select>
+                  <select id="pCategory"></select>
                   <button class="btn" type="button" id="quickCategory" title="Add a new category" aria-label="Add a new category"><svg class="ico"><use href="#i-plus"/></svg></button>
                 </div>
                 <small class="err" id="pCategoryErr"></small>
@@ -311,6 +323,25 @@
               <button class="btn" type="button" data-action="drive-export"><svg class="ico"><use href="#i-cloud"/></svg>Export to Google Drive</button>
               <button class="btn" type="button" data-action="drive-import"><svg class="ico"><use href="#i-download"/></svg>Import from Google Drive</button>
             </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Branding</h2></div>
+            <label class="field narrow">
+              <span>App / company name</span>
+              <input type="text" id="brandInput" maxlength="40" placeholder="Ameer Fire &amp; Safety" autocomplete="off">
+              <small class="hint">Shown at the top of the sidebar and in the browser tab.</small>
+            </label>
+            <div class="brand-box">
+              <div class="brand-preview" id="brandPreview"></div>
+              <div class="image-actions">
+                <input type="file" id="brandFile" accept="image/*" hidden>
+                <button class="btn" type="button" id="brandPick"><svg class="ico"><use href="#i-upload"/></svg><span id="brandPickLabel">Upload logo</span></button>
+                <button class="btn danger-outline" type="button" id="brandLogoRemove" hidden>Remove logo</button>
+                <small class="hint">Replaces the icon next to the name (shown at the same 24 × 24 px size). Transparent PNG or SVG looks best.</small>
+                <small class="err" id="brandErr"></small>
+              </div>
+            </div>
+            <div class="btn-row"><button class="btn ghost" type="button" id="brandReset">Reset name &amp; logo to default</button></div>
           </div>
           <div class="panel">
             <div class="panel-head"><h2>Display</h2></div>

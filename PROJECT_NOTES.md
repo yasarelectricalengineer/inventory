@@ -59,6 +59,13 @@ Dashboard, Products, Add Product (also used for edit and duplicate), Product Det
 - Folder used: `https://drive.google.com/drive/folders/1pCFabqhdlKb4VHPfEfAaBbRmhT5k1_RW` (constant `DRIVE_URL` near `driveExport` in `js/app.js`; change that one line to use another folder).
 - No Google API, OAuth, Cloud project or billing is used anywhere.
 
+### Version 5: bulk category edit
+- Products table has a checkbox on each row and a select-all checkbox (selects only the products currently shown after search/filters).
+- When products are selected a bar appears: pick a category and click **Set category** (replaces each product's category), or click **Remove category** (clears it). Both ask for confirmation, then save in one transaction (`Store.putMany`) and show a toast. Only products that actually change are counted.
+- Selection is limited to visible products: if a filter hides a selected product it is unselected, so bulk actions never touch hidden rows.
+- Category is now **optional** on a product (needed so "remove" makes sense). Products without one show "No category"; the Category filter has a "No category" option to find them.
+- Code: `updateSelectionUI`, `bulkApplyCategory`, `bulkSetCategory`, `bulkRemoveCategory` in `js/app.js`.
+
 ## Where to look in `js/app.js`
 - `Store` – IndexedDB/localStorage layer (`getAll`, `put`, `remove`, `replaceAll`)
 - `priceInfo`, `bestLabel`, `lowPrice` – price comparison maths
@@ -66,6 +73,7 @@ Dashboard, Products, Add Product (also used for edit and duplicate), Product Det
 - `renderProducts`, `renderProductDetail`, `renderDashboard`, `renderReports` – screens
 - `renderSupplierRows`, `updateLiveLowest`, `readAndValidateForm`, `submitProduct`, `loadForm` – product form
 - `startEdit`, `startDuplicate`, `duplicateItem` – edit and duplicate
+- `updateSelectionUI`, `bulkApplyCategory` – bulk category edit
 - `exportJSON`, `exportCSV`, `parseBackup`, `importFile`, `clearAll` – backup
 - `driveExport`, `driveImport`, `DRIVE_URL` – Google Drive buttons
 - `migrateProducts`, `init` – startup
@@ -91,6 +99,12 @@ Dashboard, Products, Add Product (also used for edit and duplicate), Product Det
 7. Export JSON, Clear All Data, Import the same file: everything returns.
 8. Export to Google Drive: file downloads and the Drive folder opens; Import from Google Drive: dialog shows and file picker opens.
 9. Check on a phone-width window: menu, cards, forms.
+10. Tick 3 products, choose a category, click Set category: all 3 change. Tick them again, click Remove category: they show "No category"; filter by "No category" finds them.
 
 ## How to report a problem
 Say: which page, what you clicked, what you expected, what happened, which browser, and any red error text from the browser console (press F12, then Console).
+
+## Branding & theme update
+- Settings > Branding: editable app/company name (default `Ameer Fire & Safety`) and an uploadable logo that replaces the sidebar icon (same 24 x 24 px size). Logo is shrunk to max 96px PNG (keeps transparency) and stored in `stockroom:settings` (`brandName`, `brandLogo`). Included in JSON export/import. Browser tab title and favicon follow the name/logo. "Reset name & logo" restores defaults.
+- Theme: black sidebar, fire red (`--fire-red`, primary buttons/active nav) and fire yellow (`--fire-yellow`, brand icon, focus ring, red-to-yellow bars and top stripe). Colors are CSS variables at the top of `css/styles.css`; dark mode is pure black.
+
