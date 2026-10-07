@@ -72,7 +72,7 @@ Open **Reports / Export & Import** or **Settings**.
 
 - **Export data (JSON)**: downloads `inventory-backup-YYYY-MM-DD.json` with all products (including supplier prices and images), categories and companies.
 - **Import data (JSON)**: pick a file you exported earlier. You'll see a confirmation showing what it contains. Importing **replaces** all current data.
-- **Export to Google Drive** (manual): downloads the same JSON backup, then opens <https://drive.google.com/drive/my-drive> in a new tab. In Drive, click **New → File upload** and pick the downloaded file.
+- **Export to Google Drive** (manual): downloads the same JSON backup, then opens your backup folder (<https://drive.google.com/drive/folders/1pCFabqhdlKb4VHPfEfAaBbRmhT5k1_RW>) in a new tab. In Drive, click **New → File upload** and pick the downloaded file. To use a different folder, change the `DRIVE_URL` line in `js/app.js`.
 - **Import from Google Drive** (manual): opens Drive in a new tab. Download your backup there, return to the app and click **Choose downloaded file**, then confirm the import.
   These buttons only open the normal Google Drive website. There is no Google API, OAuth, Cloud project or billing, and the app never sends your data anywhere. You upload the file yourself, so it is covered by your own Google account's privacy settings.
 - **Export products (CSV)**: downloads a spreadsheet-friendly list (name, category, lowest price, best supplier, highest price, number of suppliers, all suppliers with prices and codes, stock, minimum level, status, stock value). It does not include images and is not meant for re-import; use JSON for backups.

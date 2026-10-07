@@ -1010,7 +1010,8 @@
   }
 
   /* Manual Google Drive backup: no API, no sign-in. We only open the normal Drive website in a new tab. */
-  const DRIVE_URL = 'https://drive.google.com/drive/my-drive';
+  // Your backup folder on Google Drive. Change this one line to use a different folder.
+  const DRIVE_URL = 'https://drive.google.com/drive/folders/1pCFabqhdlKb4VHPfEfAaBbRmhT5k1_RW';
   function openDrive() {
     const w = window.open(DRIVE_URL, '_blank');
     if (w) { try { w.opener = null; } catch (e) { /* ignore */ } }
@@ -1021,7 +1022,7 @@
     exportJSON();                       // downloads the backup file
     const opened = openDrive();         // opens Google Drive in a new tab
     toast(opened
-      ? 'Backup downloaded. In the Google Drive tab, click New → File upload and choose it.'
+      ? 'Backup downloaded. In your Drive folder, click New → File upload and choose it.'
       : 'Backup downloaded. Pop-up was blocked, so open drive.google.com yourself and upload the file.', opened ? 'ok' : '', 8000);
   }
 
