@@ -338,19 +338,3 @@ dialog p { margin: 0 0 6px; color: var(--muted); }
 .steps li { margin: 6px 0; }
 .steps code { background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-size: .85em; }
 #driveDialog .dialog-actions { flex-wrap: wrap; }
-
-/* Bulk category edit */
-.chk-col, .td-chk { width: 1%; padding-right: 0 !important; }
-.table input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
-.table tbody tr.selected td { background: var(--primary-soft); }
-.bulk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; border-color: var(--primary); position: sticky; top: 64px; z-index: 15; }
-.bulk-bar .field { flex: 1 1 200px; max-width: 280px; }
-@media (max-width: 960px) { .bulk-bar { top: 56px; } }
-@media (max-width: 760px) {
-  .table td.td-chk { justify-content: flex-start; width: 100%; }
-  .table td.td-chk::before { display: none; }
-  .table tbody tr.selected { background: var(--primary-soft); }
-  .table tbody tr.selected td { background: transparent; }
-  .bulk-bar .field { max-width: none; flex-basis: 100%; }
-  .bulk-bar .btn { flex: 1 1 auto; }
-}
